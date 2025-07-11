@@ -240,10 +240,6 @@ def main():
     print(f"玩家控制的角色: {', '.join(player_roles) if player_roles else '无'}")
     simulator = DebateSimulator(args.topic, args.roles, config, args.ai_use, player_roles=player_roles)
     simulator.run_debate()
-#python main.py --ai_use True
-#python main.py
-#python main.py --player_roles 正方一辩 --ai_use True
-#python main.py --topic "抽象文化是当代年轻人的毒药还是解药"
 
 if __name__ == "__main__":
     main()

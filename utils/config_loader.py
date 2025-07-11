@@ -16,7 +16,6 @@ class ConfigLoader:
                 "speech_time_limit": 120,
                 "max_speech_length": 800,
                 "knowledge_validation": True,
-                #对不同类型的分数有不同的权重
                 "scoring_weights": {
                     "logic": 0.25,
                     "persuasion": 0.3,
