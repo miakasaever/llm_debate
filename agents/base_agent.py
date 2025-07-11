@@ -19,7 +19,7 @@ class BaseAgent:
             base_url="https://dashscope.aliyuncs.com/compatible-mode/v1",
         )
     
-    def llm_api(self, prompt: str, max_retries=3, delay=1) -> str:
+    def llm_api(self, prompt: str,config:dict, max_retries=3, delay=1) -> str:
         """
         llm大模型API的调用，
         此处我们将温度调成0.1让模型尽可能生成一个相对稳定的内容
@@ -27,9 +27,9 @@ class BaseAgent:
         for attempt in range(max_retries):
             try:
                 response = self.client.chat.completions.create(
-                    model=self.config.get("model", "qwen-turbo"),
+                    model=self.config.get("model", "qwen-plus"),
                     messages=[
-                        {"role": "system", "content": "你是一位辩论赛选手"},
+                        {"role": "system", "content": "你是一位专业辩论赛选手"},
                         {"role": "user", "content": prompt},
                     ],
                     temperature=0.1,

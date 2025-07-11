@@ -48,7 +48,7 @@ class DebaterAgent(BaseAgent):
     ###你的内容只需要包含你发言稿的部分！不需要再加入你分析的过程！！！
         """
         try:
-            response = self.llm_api(prompt)
+            response = self.llm_api(prompt,self.config)
             return response.strip()
         except Exception as e:
             print(f"论点生成失败: {str(e)}")

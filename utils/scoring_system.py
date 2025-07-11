@@ -8,7 +8,7 @@ import re
 import json
 
 
-def llm_api(prompt: str, max_retries=3, delay=1) -> str:
+def llm_api(prompt: str,config:dict, max_retries=3, delay=1) -> str:
     """
     llm大模型API的调用，温度调整为0.1确保稳定输出
     """
@@ -19,12 +19,13 @@ def llm_api(prompt: str, max_retries=3, delay=1) -> str:
                 base_url="https://dashscope.aliyuncs.com/compatible-mode/v1",
             )
             response = client.chat.completions.create(
-                model="qwen-max",
+                model=config.get("model", "qwen-max"),
                 messages=[
-                    {"role": "system", "content": "你是一位专业的辩论赛裁判"},
-                    {"role": "user", "content": f"{prompt}"},
+                    {"role": "system", "content": "你是一位专业辩论赛裁判"},
+                    {"role": "user", "content": prompt},
                 ],
-                temperature=0.1
+                temperature=0.1,
+                max_tokens=1000
             )
             return response.choices[0].message.content.strip()
         except Exception as e:
@@ -36,7 +37,7 @@ def llm_api(prompt: str, max_retries=3, delay=1) -> str:
 
 class ScoringSystem:
     @staticmethod
-    def llm_calculate_dimension_scores(speech: dict, history: List[dict], topic: str) -> Dict[str, float]:
+    def llm_calculate_dimension_scores(speech: dict, history: List[dict], topic: str,config:Dict) -> Dict[str, float]:
         """
         计算辩论发言的多维度分数（0-1范围）
         :param speech: 当前发言 {content: str, stage: str}
@@ -50,7 +51,7 @@ class ScoringSystem:
         prompt = ScoringSystem._create_scoring_prompt(content, history, topic, stage)
 
         try:
-            response = llm_api(prompt)
+            response = llm_api(prompt,config)
 
             scores = ScoringSystem._parse_scores(response)
         except Exception as e:

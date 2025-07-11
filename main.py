@@ -24,29 +24,26 @@ DEBATE_STAGES = [
 
 
 class DebateSimulator:
-    def __init__(self, topic: str, roles: List[str], config: Dict, ai_used: bool, player_roles: List[str] = []):
+    def __init__(self, topic: str, roles: List[str], config: Dict,ai_used: bool,nums_of_referee:int, player_roles: List[str] = []):
         self.topic = topic
         self.roles = roles
         self.config = config
         self.ai_used = ai_used
+        self.nums_of_referee=nums_of_referee
         self.player_roles = player_roles or []
         self.agents = self._create_agents()
         self.speech_history = []
         self.current_stage = 0
 
-    def _create_agents(self) -> List[Dict]:
-        """
-        初始化智能体
-        """
-        agents = []
 
+
+    def _create_debate_agents(self,agents:List[Dict]):
         for role in self.roles:
             agent_id = f"debater_{len(agents)}"
             config = {
-                "knowledge_agent": self.config.get("knowledge_agent_config", {}),
+                "knowledge_agent": self.config.get("debate_agent_config", {}).get(role,{}),
                 "max_speech_length": self.config.get("max_speech_length", 800)
             }
-            # 区分是否玩家参加
             if role in self.player_roles:
                 agent = PlayerAgent(agent_id, role, config)
                 agent_type = "player"
@@ -62,17 +59,31 @@ class DebateSimulator:
                 "team": role[:2]
             })
 
-        # 创建裁判
-        referee_config = {
-            "knowledge_agent": self.config.get("knowledge_agent_config", {})
-        }
-        referee_agent = RefereeAgent("referee_0", "裁判", referee_config, self.ai_used)
-        agents.append({
-            "id": "referee_0",
-            "agent": referee_agent,
-            "type": "referee",
-            "role": "裁判"
-        })
+
+
+    def _create_referee_agents(self,agents:List[Dict]):
+        for i in range(self.nums_of_referee):
+            referee_config = {
+                "knowledge_agent": self.config.get("debate_agent_config", {}).get(f"裁判{i+1}",{})
+            }
+            referee_agent = RefereeAgent(f"referee_{i+1}", f"裁判{i+1}", referee_config, self.ai_used)
+            agents.append({
+                "id": f"referee_{i+1}",
+                "agent": referee_agent,
+                "type": "referee",
+                "role": f"裁判{i+1}"
+            })
+
+
+    def _create_agents(self) -> List[Dict]:
+        """
+        初始化智能体
+        """
+        agents = []
+
+        self._create_debate_agents(agents)
+        self._create_referee_agents(agents)
+
         return agents
 
     def run_debate(self):
@@ -136,24 +147,24 @@ class DebateSimulator:
                     print(f"{response['content']}")
 
                     # 收集信息交由裁判系统判断
-                    referee = next(a for a in self.agents if a["type"] == "referee")
-                    judge_context = {
-                        "topic": self.topic,
-                        "current_stage": stage_name,
-                        "stage_round": round_num,
-                        "speech_history": self.speech_history,
-                        "current_speech": response
-                    }
-                    judgment = referee["agent"].generate_response(judge_context)
-                    self.speech_history.append(judgment)
+                    referees = [a for a in self.agents if a["type"] == "referee"]
+                    for referee in referees:
+                        judge_context = {
+                            "topic": self.topic,
+                            "current_stage": stage_name,
+                            "stage_round": round_num,
+                            "speech_history": self.speech_history,
+                            "current_speech": response
+                        }
+                        judgment = referee["agent"].generate_response(judge_context)
+                        self.speech_history.append(judgment)
 
-                    # 展示分数
-                    print(f"\n【裁判】评分:")
-                    for dim, score in judgment["scores"].items():
-                        print(f"  {dim}: {score:.2f}")
-                    print(f"Comment: {judgment['comment']}")
+                        print(f"\n【{referee['role']}】评分:")
+                        for dim, score in judgment["scores"].items():
+                            print(f"  {dim}: {score:.2f}")
+                        print(f"Comment: {judgment['comment']}")
 
-                    time.sleep(40)
+                    time.sleep(2)
 
         self.announce_result()
 
@@ -209,21 +220,29 @@ def main():
     parser = argparse.ArgumentParser(description='AI Debate Simulator')
     parser.add_argument('--topic', type=str, default="人工智能是否威胁人类就业",
                         help='Debate topic')
+    #Use your API_KEY as possible
     parser.add_argument('--api_key', type=str, default=os.getenv("DASHSCOPE_API_KEY"),
                         help='DashScope API key (can also be set via environment variable)')
+
     parser.add_argument('--model', type=str, default="qwen-plus",
-                        choices=["qwen-turbo", "qwen-plus", "qwen-max"],
                         help='AI model to use')
+
     parser.add_argument('--roles', nargs='+',
-                        default=["正方一辩", "反方一辩", "正方二辩", "反方二辩"],
+                        default=["正方一辩", "反方一辩", "正方二辩", "反方二辩","正方三辩","反方三辩","正方四辩","反方四辩"],
                         help='List of debater roles')
     parser.add_argument('--player_roles', nargs='+',
-                        choices=["正方一辩", "反方一辩", "正方二辩", "反方二辩"],
+                        choices=["正方一辩", "反方一辩", "正方二辩", "反方二辩","正方三辩","反方三辩","正方四辩","反方四辩"],
                         help='Roles controlled by human players')
+    #Setting it True would be better
+    parser.add_argument('--nums_referee',
+                        type=int,
+                        default=1,
+                        help='Number of referee'
+    )
     parser.add_argument('--ai_use',
                         type=bool,
-                        default=False,
-                        help='是否使用AI裁判'),
+                        default=True,
+                        help='Ai referee used or not'),
     args = parser.parse_args()
 
     config = ConfigLoader.load_config()
@@ -233,12 +252,16 @@ def main():
     }
     config["knowledge_agent_config"] = knowledge_config
 
-    # 初始化
+    #Create debate_agent_config
+    agents_config=ConfigLoader.create_model_config(args.roles,args.nums_referee)
+    config['debate_agent_config']=agents_config
+
+    # Init
     player_roles = args.player_roles or []
     print(f"使用模型: {args.model}")
     print(f"辩手角色: {', '.join(args.roles)}")
     print(f"玩家控制的角色: {', '.join(player_roles) if player_roles else '无'}")
-    simulator = DebateSimulator(args.topic, args.roles, config, args.ai_use, player_roles=player_roles)
+    simulator = DebateSimulator(args.topic, args.roles, config, args.ai_use,args.nums_referee,player_roles=player_roles)
     simulator.run_debate()
 
 if __name__ == "__main__":

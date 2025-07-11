@@ -22,7 +22,8 @@ class RefereeAgent(BaseAgent):
             scores = ScoringSystem.llm_calculate_dimension_scores(
                 speech=scoring_speech,
                 history=context["speech_history"],
-                topic=context["topic"]
+                topic=context["topic"],
+                config=self.config
             )
         else:
             scores = ScoringSystem.calculate_dimension_scores(
