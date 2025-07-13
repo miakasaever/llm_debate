@@ -38,7 +38,8 @@ class RefereeAgent(BaseAgent):
             "agent_id": self.agent_id,
             "type": "judgment",
             "scores": scores,
-            "comment": comment
+            "comment": comment,
+            "judge_team":context['judge_team']
         }
     
     def _generate_comment(self, scores: dict) -> str:

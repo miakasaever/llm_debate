@@ -151,6 +151,7 @@ class DebateSimulator:
                     for referee in referees:
                         judge_context = {
                             "topic": self.topic,
+                            "judge_team":agent_info["role"][:2],
                             "current_stage": stage_name,
                             "stage_round": round_num,
                             "speech_history": self.speech_history,
@@ -178,14 +179,17 @@ class DebateSimulator:
         # 开始评分
         for speech in self.speech_history:
             if speech["type"] == "judgment":
-                prev_idx = self.speech_history.index(speech) - 1
-                if prev_idx >= 0 and self.speech_history[prev_idx]["type"] == "argument":
-                    debater_speech = self.speech_history[prev_idx]
-                    team = debater_speech["role"][:2]
-                    if team in team_scores:
-                        total_score = sum(speech["scores"].values())
-                        team_scores[team] += total_score
-                        team_counts[team] += 1
+                # prev_idx = self.speech_history.index(speech) - 1
+                # if prev_idx >= 0 and self.speech_history[prev_idx]["type"] == "argument":
+                #     debater_speech = self.speech_history[prev_idx]
+                #     team = debater_speech["role"][:2]
+                #     if team in team_scores:
+                #         total_score = sum(speech["scores"].values())
+                #         team_scores[team] += total_score
+                #         team_counts[team] += 1
+                team_scores[speech["judge_team"]]+=sum(speech["scores"].values())
+                team_counts[speech["judge_team"]]+=1
+
 
         # 计算平均分数
         team_avg = {}
@@ -223,12 +227,8 @@ def main():
     #Use your API_KEY as possible
     parser.add_argument('--api_key', type=str, default=os.getenv("DASHSCOPE_API_KEY"),
                         help='DashScope API key (can also be set via environment variable)')
-
-    parser.add_argument('--model', type=str, default="qwen-plus",
-                        help='AI model to use')
-
     parser.add_argument('--roles', nargs='+',
-                        default=["正方一辩", "反方一辩", "正方二辩", "反方二辩","正方三辩","反方三辩","正方四辩","反方四辩"],
+                        default=["正方一辩", "反方一辩"],
                         help='List of debater roles')
     parser.add_argument('--player_roles', nargs='+',
                         choices=["正方一辩", "反方一辩", "正方二辩", "反方二辩","正方三辩","反方三辩","正方四辩","反方四辩"],
@@ -248,7 +248,6 @@ def main():
     config = ConfigLoader.load_config()
     knowledge_config = {
         "api_key": args.api_key,
-        "model": args.model
     }
     config["knowledge_agent_config"] = knowledge_config
 
@@ -258,7 +257,6 @@ def main():
 
     # Init
     player_roles = args.player_roles or []
-    print(f"使用模型: {args.model}")
     print(f"辩手角色: {', '.join(args.roles)}")
     print(f"玩家控制的角色: {', '.join(player_roles) if player_roles else '无'}")
     simulator = DebateSimulator(args.topic, args.roles, config, args.ai_use,args.nums_referee,player_roles=player_roles)
