@@ -228,7 +228,7 @@ def main():
     parser.add_argument('--api_key', type=str, default=os.getenv("DASHSCOPE_API_KEY"),
                         help='DashScope API key (can also be set via environment variable)')
     parser.add_argument('--roles', nargs='+',
-                        default=["正方一辩", "反方一辩"],
+                        default=["正方一辩", "反方一辩","正方二辩", "反方二辩","正方三辩","反方三辩","正方四辩","反方四辩"],
                         help='List of debater roles')
     parser.add_argument('--player_roles', nargs='+',
                         choices=["正方一辩", "反方一辩", "正方二辩", "反方二辩","正方三辩","反方三辩","正方四辩","反方四辩"],

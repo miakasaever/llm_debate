@@ -19,12 +19,12 @@ def llm_api(prompt: str,config:dict, max_retries=3, delay=1) -> str:
                 base_url="https://dashscope.aliyuncs.com/compatible-mode/v1",
             )
             response = client.chat.completions.create(
-                model=config.get("model", "qwen-max"),
+                model=config.get("knowledge_agent", "qwen-max"),
                 messages=[
                     {"role": "system", "content": "你是一位专业辩论赛裁判"},
                     {"role": "user", "content": prompt},
                 ],
-                temperature=0.1,
+                temperature=0.3,
                 max_tokens=1000
             )
             return response.choices[0].message.content.strip()
@@ -146,7 +146,7 @@ class ScoringSystem:
             return "暂无历史发言"
 
         return "\n".join(
-            f"{idx + 1}. {item.get('role', '辩手')}: {item.get('content', '')[:80]}{'...' if len(item.get('content', '')) > 80 else ''}"
+            f"{idx + 1}. {item.get('role', '辩手')}: {item.get('content', '')[:300]}{'...' if len(item.get('content', '')) > 300 else ''}"
             for idx, item in enumerate(history[-3:])
         )
 

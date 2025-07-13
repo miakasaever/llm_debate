@@ -5,17 +5,18 @@ from utils.scoring_system import ScoringSystem
 
 
 class RefereeAgent(BaseAgent):
-    def __init__(self, agent_id: str, role: str, config: dict,llm_use:bool = False):
+    def __init__(self, agent_id: str, role: str, config: dict,llm_use:bool=True):
         super().__init__(agent_id, role, config)
         self.llm_use=llm_use
     
     def generate_response(self, context: dict) -> dict:
         current_speech = context["current_speech"]
         content = current_speech.get("full_content", current_speech.get("content", ""))
+
         
         scoring_speech = {
             "content": content,
-            "role": current_speech.get("role", "辩手"),
+            "role": current_speech.get("role", "裁判"),
             "type": "argument"
         }
         if self.llm_use:
